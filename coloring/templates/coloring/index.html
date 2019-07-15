@@ -5,20 +5,64 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   	<title>P3 Coloring</title>
-
 	<script type="text/javascript" src="{% static 'coloring/vendors/jquery/jquery-3.3.1.min.js' %}"></script>
 	<script type="text/javascript" src="{% static 'coloring/vendors/paper/paper-full.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'coloring/vendors/hammer/hammer.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'coloring/vendors/hammer/jquery.hammer.js' %}"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+ 
+
 
 	<style type="text/css">
 		#color-palette {
-			width: 300px;
+			width: 65px;
 			background-color: #f1f1f1;
 			display: flex;
 			flex-wrap: wrap;
 			position: absolute;
 			top: 0;
 		}
+    
+    #input-group, #mb-3, #form-control {
+      width: 100px;
+    }
+    
+    #c-palette {
+			width: 65px;
+			background-color: #f1f1f1;
+			display: flex;
+			flex-wrap: wrap;
+			position: absolute;
+			top: 0;
+		}
+    
+   .btn, .btn:active,.btn:visited {
+    background-color:#115DA8;
+    border: none; 
+    color: #ffffff; /* White text */
+    padding: 10px 10px; /* Some padding */
+    font-size: 16px; /* Set a font size */
+    cursor: pointer; /* Mouse pointer on hover */
+    
+  }
+    
+    
+    #expand {
+      position: absolute;
+      top: 65px;
+      right: 30px;
+    }
+    
+    #done {
 
+      position: absolute;
+      top: 300px;
+      right: 20px;
+      font-size: 14px;
+    }
+    
 		.swatch {
 			width: 24px;
 			height: 24px;
@@ -26,20 +70,31 @@
 			-webkit-border-radius: 12px;
 			border-radius: 12px;
 			margin: 3px;
+      border : 0px;
+		}
+    
+		#myCanvas {
+
+		    display: block;
+      position:absolute;
+      top:40px;
+      right: 80px;
 		}
 
-		#myCanvas {
-			padding-left: 0;
-		    padding-right: 0;
-		    margin-left: auto;
-		    margin-right: auto;
-		    display: block;
-		}
+
+    
 	</style>
 
 	<script type="text/javascript" canvas="canvas">
+    
+    $(document).ready(function() {
+        $('#my-modal').modal('show');
+        var height = $(window).height() - 200;
+    });
+    
 		window.onload = function() {
 			var canvas = document.getElementById('myCanvas');
+      var CTX=canvas.getContext("2d");
 
 			// coloring page
 			var mandala = {
@@ -47,22 +102,72 @@
 				lastClicked: null,
 				filePath: '/static/coloring/images/mandala-freepik.svg'
 			};	
-
+      var mandalasam={
+        item: null,
+				lastClicked: null,
+				filePath: '/static/coloring/images/mandala-sam.svg'
+      };
 			// color palette
 			var cp = {
 				history: ["#000000"], // black selected by default
-				options: [],
+				$container: $('#c-palette')
+			}
+
+      // full range of colors
+			var cpicker = {
+				history: [], 
+				options: ["#607d8b","#9e9e9e","#795548", "#ff5722","#ff9800","#ffc107","#ffeb3b","#cddc39","#8bc34a","#4caf50","#009688"
+                 , "#00bcd4","#03a9f4","#2196f3","#3f51b5","#673ab7","#9c27b0","#e91e63","#f44336"],
 				$container: $('#color-palette')
 			}
+      var snapth=0;
+      var file={
+        shot:[]
+      }
+      
+      
+      function newsnap(Item,Style){
+        this.Item=Item;
+        this.Style=Style;
+      }
+      var snapshot=new newsnap(new Array(),new Array());
+      //snapshot btn function
+      $('#snapshotBtn').click(function(){
+        
+        snapth=snapth+1;
+        file.shot.push(snapshot);
+        snapshot=new newsnap(new Array(),new Array());
+        for(i=0;i<mandala.item.children.length;i++){
+          snapshot.Item.push(mandala.item.children[i]);
+          snapshot.Style.push(mandala.item.children[i].fillColor)}
+        var MyDiv=document.getElementById("ddd");
+        var bt=document.createElement("button");
+        
+        
+        bt.innerHTML=snapth;
+        
+        
+        bt.onclick=function(){
+          var num=bt.innerHTML-1;
+         for(i=0;i<file.shot[num].Item.length;i++){
+           file.shot[num].Item[i].fillColor=file.shot[num].Style[i];
+         }
+         
+        }; 
+
+       
+        
+        $('#ddd').append(bt);
+      
+      });
       
 			// your rectangle gradient interaction goes in this function
 			// you may also add code outside of the function (e.g., global variables)
 			function myGradientInteraction(){
-        var rect = new paper.Path.Rectangle(220,300, 300, 100);
+                var rect = new paper.Path.Rectangle(220,300, 300, 100);
         rect.fillColor = 'red';
 				
         var tool = new paper.Tool();
-
 				tool.onMouseUp = function (event) {
           rect.fillColor = {
             gradient : {
@@ -73,63 +178,115 @@
           }
 				}
 			}
-
+			// your custom interaction goes here!
+			// you may replace everything
 			function myCustomInteraction() {
-				var tool = new paper.Tool();
+        
+      
+          
+     var tool = new paper.Tool();
+      
+        for(i=0;i<mandala.item.children.length;i++){
+          snapshot.Item.push(mandala.item.children[i]);
+          snapshot.Style.push(mandala.item.children[i].fillColor)
+          
+          
+      }  
+    tool.onMouseDown = function (event) {
+     
+        var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
+        if (hit) {
+            hit.item.fillColor = cp.history[cp.history.length - 1];          
+          var a=snapshot.Item.indexOf(hit.item);
+          snapshot.Style[a]=hit.item.fillColor;
+          
+        }
+    }
+   }
+      
+      
+			// loads a set of colors from a json to create a color palette
+			function getColorsCreatePalette(){
+        $("#expand").hide();
+				cpicker.$container.html(" ");
+       colorPick(cpicker.options);
 
-				tool.onMouseDown = function (event) {
-				    var hit = mandala.item.hitTest(event.point, { tolerance: 10, fill: true });
-				    if (hit) {
-				        hit.item.fillColor = cp.history[cp.history.length - 1];
-				    }
-				}
+
 			}
+      
+      function disappear(){
+        $("#done").hide();
+      }
+      
+      function appear(){
+        $("#done").show();
+      }
+      
+      function colorPick(colors){
+        var count = 0;
+        $("#done").text("choose 4");
+        for (var i = colors.length - 1; i >= 0; i--) {
+					var $swatch = $('<div>',{id:'curr'}).css("background-color", colors[i])
+									   .addClass("swatch");
+          $swatch.click(function(){
+            count += 1;
+            if (count <= 4) {
+              $("#done").text(count + "/4");
+              $(this).css("border","5px solid black");
+              // add color to the color palette history
+					  	cpicker.history.push($(this).css("background-color"));
+            }
+            if (count == 4) {
+              $("#done").text(" ");
+              cpicker.$container.empty();
+              createColorPalette(cpicker.history);
+            }
+					});
+					cpicker.$container.append($swatch);
+				}
+      }
 
-
-			// create a color palette with the given colors
+      			// create a color palette with the given colors
 			function createColorPalette(colors){
-
+        $("#expand").show();
+        $("#expand").click(function(){
+          cp.$container.empty();
+          cp.history = [];
+          cpicker.$container.empty();
+          cpicker.history = [];
+          getColorsCreatePalette();
+        });
+        
+        
 				// create a swatch for each color
 				for (var i = colors.length - 1; i >= 0; i--) {
-					var $swatch = $("<div>").css("background-color", colors[i])
+					var $swatch = $('<div>',{id:'curr'}).css("background-color", colors[i])
 									   .addClass("swatch");
-					$swatch.click(function(){
+
+					$swatch.click(function() {
 						// add color to the color palette history
 					  	cp.history.push($(this).css("background-color"));
 					});
 					cp.$container.append($swatch);
 				}
 			}
-
-			// loads a set of colors from a json to create a color palette
-			function getColorsCreatePalette(){
-				cp.$container.html(" ");
-				$.getJSON('/static/coloring/vendors/material/material-colors.json', function(colors){
-					var keys = Object.keys(colors);
-					for (var i = keys.length - 1; i >= 0; i--) {
-						cp.options.push(colors[keys[i]][500]);
-					}
-					createColorPalette(cp.options);
-				});
-			}
-
+     
+      
 			function init(custom){
 				paper.setup(canvas);
 				getColorsCreatePalette();
-
 				paper.project.importSVG(mandala.filePath, function(item) { 
 					mandala.item = item._children["design-freepik"];
 				    paper.project.insertLayer(0,mandala.item);
-
 				    if (custom) {
-				    	myCustomInteraction();	
+				    	 myCustomInteraction();
 				    } else {
+             
 				    	myGradientInteraction();
 				    }		
 					
 				}); 
 			}
-
 			// To see your myGradientInteraction version visit: 
 			// http://<your url>:8000/coloring/?type=gradient
 			// To see your myCustomInteraction version visit: 
@@ -143,9 +300,67 @@
 		}
 	</script>
 </head>
+  
 <body>	
+  <div class="modal" id = "my-modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Interactive Coloring Book</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><b>Start</b> by choosing four colors on your palette</p>
+        <p><b>Change </b> your color palette by tapping the expand button</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-	<canvas id="myCanvas" width="750px" height="750px"></canvas>
-	<div id="color-palette"></div>
+
+  <div class="row">
+  <div class="col-md-3">
+  <div id="ddd">
+    
+    <button id = "snapshotBtn"class="btn"><i class="fa fa-camera-retro"></i> snapshot</button>
+
+    
+  </div>
+  </div>
+   
+  <div class="col-md-8">
+    <div class="input-group mb-3 w-50 justify-content-center">
+  <input type="text" class="form-control" placeholder="my title" aria-label="my title" aria-describedby="basic-addon2">
+  <div class="input-group-append">
+    <span class="input-group-text" id="basic-addon2">.jpg</span>
+  </div>
+</div>
+    
+    <canvas id="myCanvas" width="750px" height="750px"></canvas>
+    
+  </div>
+  <div class="col-md-1">
+    <div id="color-palette"></div>
+    <div id="c-palette"></div>
+
+    <div id= "full"></div>
+    <span id = "expand" class = "fa-stack fa-xs">
+    <i class = "fas fa-circle fa-stack-2x"></i>
+    <i class = "fas fa-angle-down fa-stack-1x fa-inverse"></i>
+    </span>
+
+    <p id = "done" class="text-info">choose 4</p>
+  </div>
+	
+ 
+	
+  </div>
+
 </body>
 </html>
+<!-- © 2019 GitHub, Inc. -->
